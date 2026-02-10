@@ -213,3 +213,24 @@ docker exec cecelia-core_postgres_1 psql -U cecelia -d cecelia -c "SELECT * FROM
 - TimescaleDB 配置: [timescaledb.md](./timescaledb.md) (待创建)
 - Cecelia Brain Schema: `cecelia/core/brain/migrations/`
 - ZenithJoy Schema: `zenithjoy/workspace/migrations/` (如有)
+
+---
+
+## 📝 配置示例
+
+**配置文件位置**: `infrastructure/config/postgresql/`
+
+- `docker-compose.example.yml` - Docker Compose 示例
+- `.env.example` - 环境变量示例
+
+**使用方法**:
+```bash
+cd infrastructure/config/postgresql
+cp .env.example .env
+# 编辑 .env 填入实际密码
+docker-compose -f docker-compose.example.yml up -d
+```
+
+**相关文档**:
+- Migration 管理: [migrations.md](./migrations.md)
+- Cecelia Brain Migrations: `cecelia/core/brain/migrations/` (18 个文件)
