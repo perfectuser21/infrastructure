@@ -1,0 +1,38 @@
+# 凭据和密钥
+*.key
+*.pem
+*.crt
+*.p12
+*.env
+*.env.*
+credentials.json
+secrets.yaml
+.nascredentials
+
+# 配置文件中的敏感信息
+config/**/password*
+config/**/secret*
+config/**/*.key
+
+# 备份文件
+*.backup
+*.bak
+*.sql
+*.dump
+backups/
+
+# 临时文件
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统文件
+.cache/
+.local/
