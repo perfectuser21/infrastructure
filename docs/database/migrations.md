@@ -1,8 +1,10 @@
 ---
 id: database-migrations
-version: 1.0.0
+version: 1.1.0
 created: 2026-02-10
+updated: 2026-02-10
 changelog:
+  - 1.1.0: 添加数据库清理历史和 workspace migrations
   - 1.0.0: 初始版本 - 数据库 Migration 管理
 ---
 
@@ -11,6 +13,19 @@ changelog:
 ## 📋 概述
 
 所有服务的数据库 Schema 由各自仓库的 migrations 管理。Infrastructure 仓库只负责 PostgreSQL 的安装和配置。
+
+### 当前数据库状态 (2026-02-10)
+
+| 数据库 | 表数 | 说明 |
+|--------|------|------|
+| `cecelia` | 57 张 | Cecelia 核心表（已清理 NocoDB） |
+| `n8n_social_metrics` | - | N8N 社交媒体数据 |
+| `timescaledb` | - | TimescaleDB 模板库 |
+
+### 清理历史
+
+- **2026-02-10**: 删除 85 张 NocoDB 遗留表 (nc_*)，总表数从 142 → 57
+- **备份**: `/tmp/cecelia-backup-before-nocodb-cleanup-20260210.sql` (48MB)
 
 ---
 
@@ -35,11 +50,35 @@ NNN_description.sql
 SELECT * FROM schema_version ORDER BY version DESC LIMIT 5;
 ```
 
-### ZenithJoy Workspace
+### Cecelia Workspace (OKR/TRD 前端)
 
-**位置**: `zenithjoy/workspace/migrations/` (如有)
+**位置 1**: `cecelia/workspace/apps/core/migrations/`
 
-**管理方式**: 各服务自己管理
+**文件数**: 7 个 SQL 文件 (OKR/TRD 相关)
+
+**文件列表**:
+```
+001_add_okr_hierarchy.sql
+002_trd_tables.sql
+003_decisions_table.sql
+004_planner_tables.sql
+005_project_state_machine.sql
+006_areas_table.sql
+007_okr_three_layer.sql
+```
+
+**位置 2**: `cecelia/workspace/apps/core/src/db/migrations/`
+
+**文件数**: 3 个 SQL 文件 (OKR 相关)
+
+**文件列表**:
+```
+001-create-key-results.sql
+002-modify-goals-table.sql
+003-modify-projects-table.sql
+```
+
+**管理方式**: 前端服务自己管理
 
 ---
 
