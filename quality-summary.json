@@ -1,6 +1,6 @@
 {
-  "branch": "cp-02122220-global-pr-import",
-  "head_sha": "c083a2b",
-  "timestamp": "2026-02-12T14:28:10Z",
+  "branch": "cp-02122318-nas-sync-config",
+  "head_sha": "8781533",
+  "timestamp": "2026-02-12T15:21:58Z",
   "note": "Quality 只汇总，不判定。CI 是最终裁判。"
 }
