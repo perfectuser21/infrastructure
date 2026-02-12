@@ -1,3 +1,11 @@
+---
+id: embeddings-architecture
+version: 1.0.0
+created: 2026-02-12
+changelog:
+  - 1.0.0: 初始版本 - Embedding 架构文档（Phase 0 和 Phase 1）
+---
+
 # Embedding 架构文档
 
 > 为 Task Database 提供语义相似度搜索能力
