@@ -1,0 +1,6 @@
+{
+  "branch": "cp-02122220-global-pr-import",
+  "head_sha": "c083a2b",
+  "timestamp": "2026-02-12T14:28:10Z",
+  "note": "Quality 只汇总，不判定。CI 是最终裁判。"
+}
