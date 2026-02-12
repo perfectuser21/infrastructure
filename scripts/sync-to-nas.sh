@@ -18,8 +18,8 @@ set -euo pipefail
 
 # Default configuration
 NAS_HOST="${NAS_HOST:-100.110.241.76}"
-NAS_USER="${NAS_USER:-xx}"
-NAS_PATH="${NAS_PATH:-/volume1/backups/us-vps}"
+NAS_USER="${NAS_USER:-徐啸}"
+NAS_PATH="${NAS_PATH:-backups/us-vps}"
 SOURCE_PATH="${SOURCE_PATH:-/home/xx}"
 LOG_FILE="${LOG_FILE:-/var/log/nas-sync.log}"
 
@@ -146,7 +146,8 @@ sync_to_nas() {
 
   # Execute rsync
   if $rsync_cmd "${rsync_opts[@]}" \
-    -e "ssh -o ConnectTimeout=30" \
+    --rsync-path=/usr/bin/rsync \
+    -e "ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no" \
     "$SOURCE_PATH/" \
     "$NAS_USER@$NAS_HOST:$NAS_PATH/" 2>&1 | tee -a "$LOG_FILE"; then
 

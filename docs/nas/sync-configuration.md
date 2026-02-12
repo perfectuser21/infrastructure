@@ -52,10 +52,10 @@ if [ ! -f ~/.ssh/id_rsa ]; then
 fi
 
 # Copy public key to NAS
-ssh-copy-id xx@100.110.241.76
+ssh-copy-id 徐啸@100.110.241.76
 
 # Test connection
-ssh xx@100.110.241.76 "echo 'SSH OK'"
+ssh 徐啸@100.110.241.76 "echo 'SSH OK'"
 ```
 
 **Note:** If `ssh-copy-id` doesn't work, manually add the public key to NAS:
@@ -74,12 +74,19 @@ chmod 600 ~/.ssh/authorized_keys
 
 ### 3. NAS Storage Path
 
+The script uses a relative path under the user's home directory by default (`backups/us-vps`).
 Ensure the destination path exists on the NAS:
 
 ```bash
-# SSH to NAS and create directory
-ssh xx@100.110.241.76 "mkdir -p /volume1/backups/us-vps"
+# SSH to NAS and create directory (in user home directory)
+ssh 徐啸@100.110.241.76 "mkdir -p ~/backups/us-vps"
+
+# Verify the directory was created
+ssh 徐啸@100.110.241.76 "ls -la ~/backups/"
 ```
+
+**Note:** The default path is `backups/us-vps` (relative to home directory), not `/volume1/backups/us-vps`.
+This is because regular users don't have write permissions to `/volume1/` root.
 
 ## Manual Synchronization
 
@@ -170,10 +177,10 @@ ping -c 3 100.110.241.76
 
 ```bash
 # SSH to NAS and check disk usage
-ssh xx@100.110.241.76 "df -h /volume1"
+ssh 徐啸@100.110.241.76 "df -h /volume1"
 
 # Check backup directory size
-ssh xx@100.110.241.76 "du -sh /volume1/backups/us-vps"
+ssh 徐啸@100.110.241.76 "du -sh /volume1/backups/us-vps"
 ```
 
 ## Troubleshooting
@@ -198,7 +205,7 @@ ping -c 5 100.110.241.76
 
 ```bash
 # Test SSH connection
-ssh -v xx@100.110.241.76
+ssh -v 徐啸@100.110.241.76
 
 # Verify SSH key is loaded
 ssh-add -l
@@ -207,17 +214,17 @@ ssh-add -l
 ssh-add ~/.ssh/id_rsa
 
 # Check NAS authorized_keys
-ssh xx@100.110.241.76 "cat ~/.ssh/authorized_keys"
+ssh 徐啸@100.110.241.76 "cat ~/.ssh/authorized_keys"
 ```
 
 ### Issue: Permission denied on NAS
 
 ```bash
 # Check NAS directory permissions
-ssh xx@100.110.241.76 "ls -ld /volume1/backups/us-vps"
+ssh 徐啸@100.110.241.76 "ls -ld /volume1/backups/us-vps"
 
 # Fix permissions if needed
-ssh xx@100.110.241.76 "chmod 755 /volume1/backups/us-vps"
+ssh 徐啸@100.110.241.76 "chmod 755 /volume1/backups/us-vps"
 ```
 
 ### Issue: Sync is slow
@@ -227,7 +234,7 @@ ssh xx@100.110.241.76 "chmod 755 /volume1/backups/us-vps"
 ping -c 10 100.110.241.76
 
 # Check bandwidth usage during sync
-ssh xx@100.110.241.76 "nload"
+ssh 徐啸@100.110.241.76 "nload"
 
 # Use compression (already enabled in script with -z flag)
 # Consider reducing sync frequency if bandwidth is limited
@@ -237,10 +244,10 @@ ssh xx@100.110.241.76 "nload"
 
 ```bash
 # Check NAS disk space
-ssh xx@100.110.241.76 "df -h /volume1"
+ssh 徐啸@100.110.241.76 "df -h /volume1"
 
 # Find large files
-ssh xx@100.110.241.76 "du -sh /volume1/backups/us-vps/* | sort -h"
+ssh 徐啸@100.110.241.76 "du -sh /volume1/backups/us-vps/* | sort -h"
 
 # Clean up old backups if needed
 # (implement retention policy based on requirements)
