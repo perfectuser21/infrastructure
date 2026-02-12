@@ -1,5 +1,19 @@
 dev
-branch: cp-20260210-nas-content-manager
-prd: .prd-cp-20260210-nas-content-manager.md
-started: 2026-02-10T14:50:00+08:00
+branch: cp-02122220-global-pr-import
+session_id: 06c9496ab670
+tty: not a tty
+prd: .prd-cp-02122220-global-pr-import.md
+started: 2026-02-12T22:22:14+08:00
+retry_count: 0
+step_1_prd: done
+step_2_detect: done
+step_3_branch: done
+step_4_dod: pending
+step_5_code: done
+step_6_test: done
+step_7_quality: done
+step_8_pr: done
+step_9_ci: pending
+step_10_learning: pending
+step_11_cleanup: pending
 tasks_created: true

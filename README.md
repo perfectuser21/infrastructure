@@ -144,6 +144,28 @@ cat docs/nas/setup.md
 ls -la docs/servers/
 ```
 
+### 导入历史 PR 到 Task Database
+
+**目的**：为 Cecelia Brain 提供历史任务数据，用于相似度搜索。
+
+```bash
+# 1. 安装 pgvector 扩展（一次性）
+bash scripts/setup-embeddings.sh
+
+# 2. 导入所有 repos 的 PR（~947+）
+node scripts/import-all-prs.js
+
+# 3. 验证导入结果
+psql -U cecelia -d cecelia -c "SELECT COUNT(*) FROM tasks WHERE metadata->>'source' = 'pr_import';"
+
+# 4. 测试相似度搜索
+curl -s localhost:5221/api/brain/search-similar \
+  -H "Content-Type: application/json" \
+  -d '{"query": "add user authentication", "type": "task"}' | jq
+```
+
+**详细文档**：`docs/database/embeddings.md`
+
 ## 🔗 相关仓库
 
 | 仓库 | 职责 | 端口 |
