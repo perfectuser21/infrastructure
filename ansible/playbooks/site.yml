@@ -1,0 +1,86 @@
+---
+# Perfect21 Infrastructure Configuration Playbook
+# Main Ansible playbook for server configuration
+
+- name: Configure Perfect21 Infrastructure
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  vars:
+    project_name: perfect21
+    ansible_python_interpreter: /usr/bin/python3
+
+  pre_tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+      when: ansible_os_family == "Debian"
+
+  roles:
+    - common
+    - security
+    - docker
+    - monitoring
+
+- name: Configure US Server
+  hosts: us_server
+  become: yes
+
+  roles:
+    - postgresql
+    - cecelia
+    - xray_vpn
+    - cloudflare_tunnel
+
+- name: Configure HK Server
+  hosts: hk_server
+  become: yes
+
+  roles:
+    - xray_vpn
+    - backup
+
+- name: Configure Network
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Configure Tailscale
+      include_role:
+        name: tailscale
+
+    - name: Verify connectivity
+      ping:
+        data: "pong"
+
+- name: Post-deployment verification
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Check service status
+      systemd:
+        name: "{{ item }}"
+        state: started
+      loop:
+        - docker
+        - tailscaled
+      register: service_status
+
+    - name: Display service status
+      debug:
+        msg: "Service {{ item.item }} is {{ item.status.ActiveState }}"
+      loop: "{{ service_status.results }}"
+
+    - name: Health checks
+      uri:
+        url: "{{ item.url }}"
+        method: GET
+        status_code: "{{ item.expected_status | default(200) }}"
+      loop:
+        - { url: "http://localhost:5221/api/brain/health", expected_status: 200 }
+        - { url: "http://localhost:5211/health", expected_status: 200 }
+      delegate_to: us_server
+      when: inventory_hostname == 'us_server'

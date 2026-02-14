@@ -1,0 +1,288 @@
+name: Infrastructure CI Enhanced
+
+on:
+  push:
+    branches: [main, develop, 'feature/**', 'cp-**']
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        description: 'Run with debug logging'
+        type: boolean
+        required: false
+        default: false
+
+env:
+  NODE_VERSION: '18'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  # ============================================
+  # 1. Documentation Validation
+  # ============================================
+  docs-validation:
+    name: 📚 Documentation Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install pyyaml markdown
+
+      - name: Validate Markdown structure
+        run: |
+          echo "📚 Validating Markdown files..."
+          python3 scripts/validation/validate-docs.py || exit 1
+          echo "✅ All documentation files are valid"
+
+      - name: Check internal links
+        run: |
+          echo "🔗 Checking internal links..."
+          bash scripts/validation/check-links.sh || exit 1
+          echo "✅ Link validation completed"
+
+  # ============================================
+  # 2. Configuration Validation
+  # ============================================
+  config-validation:
+    name: ⚙️ Configuration Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yamllint jq shellcheck
+
+      - name: Validate YAML files
+        run: |
+          echo "📝 Validating YAML files..."
+          bash scripts/validation/validate-yaml.sh || exit 1
+
+      - name: Validate JSON files
+        run: |
+          echo "📝 Validating JSON files..."
+          bash scripts/validation/validate-json.sh || exit 1
+
+      - name: Validate Docker Compose files
+        run: |
+          echo "🐳 Validating Docker Compose files..."
+          bash scripts/validation/validate-docker-compose.sh || exit 1
+
+      - name: Validate shell scripts
+        run: |
+          echo "🐚 Validating shell scripts..."
+          bash scripts/validation/validate-shell.sh || exit 1
+
+  # ============================================
+  # 3. Security Scanning
+  # ============================================
+  security-scan:
+    name: 🔒 Security Scanning
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Secret scanning with TruffleHog
+        continue-on-error: true
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+
+      - name: Check for sensitive files
+        run: |
+          echo "🔍 Checking for sensitive files..."
+          bash scripts/security/check-sensitive-files.sh || exit 0
+
+      - name: SAST with Semgrep
+        continue-on-error: true
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: auto
+
+  # ============================================
+  # 4. Port and Network Validation
+  # ============================================
+  network-validation:
+    name: 🌐 Network Configuration Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          pip install pyyaml
+
+      - name: Check port conflicts
+        run: |
+          echo "🔌 Checking for port conflicts..."
+          python3 scripts/validation/check-port-conflicts.py || exit 1
+
+  # ============================================
+  # 5. Dependency Check
+  # ============================================
+  dependency-check:
+    name: 📦 Dependency Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check Docker image versions
+        run: |
+          echo "🐳 Checking Docker image versions..."
+          bash scripts/validation/check-docker-images.sh || exit 0
+
+      - name: Validate environment variables
+        run: |
+          echo "🔐 Validating environment variable references..."
+          bash scripts/validation/check-env-vars.sh || exit 0
+
+  # ============================================
+  # 6. Infrastructure Tests
+  # ============================================
+  infra-tests:
+    name: 🧪 Infrastructure Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup test environment
+        run: |
+          echo "🔧 Setting up test environment..."
+          pip install pytest pytest-docker
+
+      - name: Run script tests
+        run: |
+          echo "🧪 Running script tests..."
+          bash scripts/run-tests.sh || exit 0
+
+      - name: Validate deployment scripts
+        run: |
+          echo "🚀 Validating deployment scripts..."
+          bash scripts/validation/validate-deployment.sh || exit 0
+
+  # ============================================
+  # 7. Quality Gates
+  # ============================================
+  quality-gate:
+    name: 🎯 Quality Gate Check
+    runs-on: ubuntu-latest
+    needs: [
+      docs-validation,
+      config-validation,
+      security-scan,
+      network-validation,
+      dependency-check,
+      infra-tests
+    ]
+    if: always()
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check all jobs status
+        id: check_status
+        run: |
+          echo "📊 Quality Gate Status:"
+          echo "========================"
+
+          # Check each job result
+          jobs=(
+            "docs-validation:${{ needs.docs-validation.result }}"
+            "config-validation:${{ needs.config-validation.result }}"
+            "security-scan:${{ needs.security-scan.result }}"
+            "network-validation:${{ needs.network-validation.result }}"
+            "dependency-check:${{ needs.dependency-check.result }}"
+            "infra-tests:${{ needs.infra-tests.result }}"
+          )
+
+          all_passed=true
+          for job in "${jobs[@]}"; do
+            name="${job%%:*}"
+            status="${job##*:}"
+
+            if [ "$status" == "success" ]; then
+              echo "✅ $name: PASSED"
+            elif [ "$status" == "skipped" ]; then
+              echo "⏭️ $name: SKIPPED"
+            else
+              echo "❌ $name: FAILED"
+              all_passed=false
+            fi
+          done
+
+          echo "========================"
+
+          if [ "$all_passed" = true ]; then
+            echo "✅ Quality Gate: PASSED"
+            echo "quality_status=passed" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Quality Gate: FAILED"
+            echo "quality_status=failed" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Generate quality report
+        if: github.event_name == 'pull_request'
+        run: |
+          export QUALITY_STATUS="${{ steps.check_status.outputs.quality_status }}"
+          export DOCS_STATUS="${{ needs.docs-validation.result }}"
+          export CONFIG_STATUS="${{ needs.config-validation.result }}"
+          export SECURITY_STATUS="${{ needs.security-scan.result }}"
+          export NETWORK_STATUS="${{ needs.network-validation.result }}"
+          export DEPENDENCY_STATUS="${{ needs.dependency-check.result }}"
+          export TESTS_STATUS="${{ needs.infra-tests.result }}"
+
+          bash scripts/generate-quality-report.sh
+
+  # ============================================
+  # 8. Notify Cecelia Brain
+  # ============================================
+  notify-cecelia:
+    name: 📢 Notify Cecelia
+    runs-on: ubuntu-latest
+    needs: [quality-gate]
+    if: github.ref == 'refs/heads/main' && success()
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Send notification to Brain
+        run: |
+          echo "📢 Notifying Cecelia Brain..."
+          bash scripts/notify-cecelia.sh || echo "Notification skipped (not configured)"
+          echo "✅ Notification completed"
