@@ -1,0 +1,81 @@
+---
+# Production Inventory
+# Ansible inventory for Perfect21 infrastructure
+
+all:
+  vars:
+    ansible_user: xx
+    ansible_ssh_private_key_file: ~/.ssh/id_rsa
+    ansible_python_interpreter: /usr/bin/python3
+    environment: production
+
+  children:
+    us_servers:
+      hosts:
+        us_server:
+          ansible_host: 146.190.52.84
+          tailscale_ip: 100.71.32.28
+          server_role: primary
+          location: nyc3
+          services:
+            - postgresql
+            - cecelia-core
+            - cecelia-workspace
+            - xray-vpn
+            - cloudflare-tunnel
+            - n8n
+
+    hk_servers:
+      hosts:
+        hk_server:
+          ansible_host: 43.154.85.217
+          tailscale_ip: 100.86.118.99
+          server_role: secondary
+          location: hongkong
+          services:
+            - xray-vpn
+            - backup
+
+    database_servers:
+      hosts:
+        us_server:
+
+    application_servers:
+      hosts:
+        us_server:
+        hk_server:
+
+    vpn_servers:
+      hosts:
+        us_server:
+        hk_server:
+
+  vars:
+    # Common configuration
+    docker_version: "24.0.7"
+    docker_compose_version: "2.23.3"
+
+    # PostgreSQL configuration
+    postgresql_version: "15"
+    postgresql_port: 5432
+    postgresql_data_dir: "/opt/postgresql/data"
+
+    # Cecelia configuration
+    cecelia_core_port: 5221
+    cecelia_prod_port: 5211
+    cecelia_dev_port: 5212
+
+    # X-Ray VPN configuration
+    xray_port: 443
+    xray_subscription_port: 8080
+
+    # N8N configuration
+    n8n_port: 5679
+    n8n_webhook_url: "https://n8n.zenjoymedia.media"
+
+    # Backup configuration
+    backup_schedule: "0 2 * * *"  # 2 AM daily
+    backup_retention_days: 30
+    backup_destinations:
+      - /opt/backups
+      - /mnt/nas/backups
