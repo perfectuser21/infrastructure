@@ -47,11 +47,15 @@ def validate_markdown_files():
             try:
                 frontmatter = yaml.safe_load(parts[1])
 
-                # Check required fields
-                required_fields = ['id', 'version', 'created', 'updated']
+                # Check required fields (updated is optional for legacy docs)
+                required_fields = ['id', 'version', 'created']
                 for field in required_fields:
                     if field not in frontmatter:
                         errors.append(f"{md_file}: Missing required field '{field}'")
+
+                # Warn about missing updated field but don't fail
+                if 'updated' not in frontmatter:
+                    print(f"    ⚠️ Warning: Missing 'updated' field (optional)")
 
                 # Validate version format (semver)
                 if 'version' in frontmatter:

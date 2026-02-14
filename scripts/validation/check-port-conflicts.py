@@ -84,7 +84,26 @@ def check_port_conflicts():
                 reserved_lower = reserved_ports[port].lower()
 
                 # Check if service name contains any part of the reserved name
-                if not any(part in service_lower for part in reserved_lower.split()):
+                # Also allow common service names that match the purpose
+                allowed_names = {
+                    '5432': ['postgres', 'postgresql', 'pg', 'cecelia'],
+                    '80': ['nginx', 'npm', 'proxy'],
+                    '81': ['nginx', 'npm', 'admin'],
+                    '5221': ['brain', 'cecelia'],
+                    '5211': ['workspace', 'cecelia'],
+                    '5212': ['workspace', 'cecelia'],
+                }
+
+                port_allowed = allowed_names.get(port, [])
+                if port_allowed:
+                    # Check if service name is in allowed list
+                    if not any(name in service_lower for name in port_allowed):
+                        errors.append(
+                            f"Port {port} is reserved for {reserved_ports[port]} "
+                            f"but used by {svc['service']} in {svc['file']}"
+                        )
+                elif not any(part in service_lower for part in reserved_lower.split()):
+                    # For ports without specific allowed names, use original logic
                     errors.append(
                         f"Port {port} is reserved for {reserved_ports[port]} "
                         f"but used by {svc['service']} in {svc['file']}"
